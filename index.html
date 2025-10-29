@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình phát The Truth About the Harry Quebert Affair 🎧</title>
+    <style>
+        /* Màu chủ đạo: Dark Teal (Xanh đen), Gold (Vàng), và Gray (Xám) */
+        :root {
+            --primary-color: #008080; /* Dark Teal - Màu nhấn chính */
+            --secondary-color: #b8860b; /* Goldenrod - Màu nhấn phụ */
+            --background-dark: #f0f4f7; 
+            --text-color: #333;
+            --container-bg: #ffffff;
+            --list-hover: #e6f1f4;
+        }
+
+        body {
+            font-family: 'Georgia', serif; /* Font chữ nghiêm túc hơn */
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-dark); 
+            color: var(--text-color);
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background-color: var(--container-bg);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); 
+            border-left: 5px solid var(--secondary-color); /* Điểm nhấn màu vàng */
+        }
+        h1 {
+            text-align: center;
+            color: var(--primary-color); 
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            font-size: 1.8em;
+        }
+        #audioPlayer {
+            width: 100%;
+            margin-bottom: 25px;
+            background-color: #e0fafa; 
+            border-radius: 8px;
+        }
+        /* Danh sách Track */
+        .chapter-list {
+            list-style: none;
+            padding: 0;
+            border-top: 1px solid #ccc;
+            max-height: 50vh; 
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        .chapter-list li {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1em;
+        }
+        .chapter-list li:last-child {
+            border-bottom: none;
+        }
+        .chapter-list li:hover {
+            background-color: var(--list-hover);
+        }
+        .chapter-list li.playing {
+            background-color: var(--primary-color); 
+            color: white;
+            font-weight: bold;
+        }
+        .chapter-title {
+            flex-grow: 1;
+        }
+        .play-status {
+            font-size: 0.85em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: var(--secondary-color); /* Status màu vàng */
+            color: white;
+            margin-left: 15px;
+            display: none; 
+        }
+        .chapter-list li.playing .play-status {
+            display: inline-block;
+            background-color: white; 
+            color: var(--primary-color); 
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎧 The Harry Quebert Affair (17 Tracks) 🕵️</h1>
+
+    <audio id="audioPlayer" controls preload="auto"></audio>
+
+    <p><strong>Track đang phát:</strong> <span id="currentChapterTitle">Chưa chọn Track</span></p>
+
+    <h2>Danh sách Track</h2>
+    <ul class="chapter-list" id="chapterList">
+        </ul>
+</div>
+
+<script>
+    // 1. Dữ liệu (01_truth.mp3 đến 17_truth.mp3)
+    const totalTracks = 17;
+    const chapters = []; 
+    const BOOK_TITLE = "The Truth About the Harry Quebert Affair"; 
+
+    for (let i = 1; i <= totalTracks; i++) {
+        // Định dạng số có 2 chữ số (01, 02, ..., 17)
+        const trackNumber = i.toString().padStart(2, '0');
+        
+        chapters.push({
+            id: i,
+            title: `Track ${i}`,
+            // Tên file: 01_truth.mp3
+            filename: `${trackNumber}_truth.mp3` 
+        });
+    }
+
+    // 2. Cấu hình Media Metadata (Lock Screen)
+    const ALBUM_TITLE = BOOK_TITLE;
+    const ARTIST_NAME = "Joël Dicker"; // Tác giả
+    const COVER_IMAGE_URL = "cover.jpg";    // Đặt tên file ảnh bìa tại đây
+
+    // 3. Các phần tử DOM & State
+    const audioPlayer = document.getElementById('audioPlayer');
+    const chapterListElement = document.getElementById('chapterList');
+    const currentChapterTitleElement = document.getElementById('currentChapterTitle');
+    let currentChapterIndex = -1; 
+
+    // 4. Hàm Cập nhật Media Session Metadata
+    function updateMediaSession(chapter) {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: chapter.title,
+                artist: ARTIST_NAME,
+                album: ALBUM_TITLE,
+                art: [{ src: COVER_IMAGE_URL, sizes: '512x512', type: 'image/jpeg' }]
+            });
+        }
+    }
+
+    // 5. Hàm tải và phát Track
+    function loadAndPlayChapter(index) {
+        if (index < 0 || index >= chapters.length) {
+            console.log("Đã hết danh sách.");
+            if ('mediaSession' in navigator) {
+                 navigator.mediaSession.metadata = null;
+            }
+            currentChapterTitleElement.textContent = "Đã hoàn thành! 🎉";
+            document.querySelectorAll('#chapterList li').forEach(li => li.classList.remove('playing'));
+            return;
+        }
+
+        currentChapterIndex = index;
+        const chapter = chapters[index];
+        const newSrc = chapter.filename; 
+
+        // Cập nhật Metadata cho Lock Screen
+        updateMediaSession(chapter); 
+
+        // Cập nhật giao diện:
+        currentChapterTitleElement.textContent = chapter.title;
+
+        // Cập nhật trạng thái 'playing'
+        document.querySelectorAll('#chapterList li').forEach((li, i) => {
+            li.classList.remove('playing');
+            if (i === index) {
+                li.classList.add('playing');
+                li.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+
+        // Tải và phát
+        if (audioPlayer.src.endsWith(newSrc)) {
+            audioPlayer.play();
+        } else {
+            audioPlayer.src = newSrc;
+            audioPlayer.load(); 
+            audioPlayer.play().catch(error => {
+                console.log('Tự động phát bị chặn. Vui lòng bấm Play.');
+            });
+        }
+    }
+
+    // 6. Hàm chuyển Track tiếp theo và trước đó
+    function playNextChapter() {
+        loadAndPlayChapter(currentChapterIndex + 1);
+    }
+
+    function playPreviousChapter() {
+        // Về đầu track nếu đã phát hơn 3 giây, ngược lại thì về track trước
+        if (audioPlayer.currentTime > 3) {
+            audioPlayer.currentTime = 0;
+        } else {
+            loadAndPlayChapter(currentChapterIndex - 1);
+        }
+    }
+
+
+    // 7. Thiết lập Media Session Handlers (Cho điều khiển Airpods)
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('previoustrack', playPreviousChapter);
+        navigator.mediaSession.setActionHandler('nexttrack', playNextChapter);
+    }
+
+
+    // 8. Liên kết sự kiện 'ended' và tạo danh sách
+    audioPlayer.addEventListener('ended', playNextChapter);
+
+    chapters.forEach((chapter, index) => {
+        const li = document.createElement('li');
+        li.setAttribute('data-index', index);
+        li.innerHTML = `<span class="chapter-title">${chapter.title}</span> <span class="play-status">ĐANG PHÁT ▶️</span>`;
+        
+        li.addEventListener('click', () => {
+            loadAndPlayChapter(index);
+        });
+
+        chapterListElement.appendChild(li);
+    });
+
+    // Tải và tạm dừng Track đầu tiên
+    if (chapters.length > 0) {
+        loadAndPlayChapter(0);
+        audioPlayer.pause(); 
+    }
+</script>
+
+</body>
+</html>
